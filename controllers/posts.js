@@ -5,7 +5,7 @@ import User from '../models/user.js';
 /* CREATE */
 export const createPost = async (req, res) => {
     try {
-        const { userId, description, picturePath } = req.body;
+        const { userId, description, picturePath, mediaType } = req.body;
         if (!description && !picturePath) return res.status(400).json({ message: 'Caption or Picture is required to post' });
         const user = await User.findById(userId);
         if (!user) return res.status(400).json({ message: 'User Not Found' });
@@ -18,13 +18,14 @@ export const createPost = async (req, res) => {
             description,
             userPicturePath: user.picturePath,
             picturePath,
+            mediaType,
             likes: {},
             comments: []
         });
         await user.save();
         await newPost.save();
-        const posts = await Post.find({});
-        res.status(201).json({ posts });
+        const posts = await Post.find({}).sort({ createdAt: -1 });
+        res.status(201).json({ result: true, posts });
     } catch (error) {
         res.status(409).json({ error: error.message });
     }
@@ -58,8 +59,8 @@ export const createComment = async (req, res) => {
 /* READ */
 export const getFeedPosts = async (req, res) => {
     try {
-        const posts = await Post.find({});
-        res.status(201).json({ posts });
+        const posts = await Post.find({}).sort({ createdAt: -1 });
+        res.status(201).json({ result: true, posts });
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -68,8 +69,8 @@ export const getFeedPosts = async (req, res) => {
 export const getUserPosts = async (req, res) => {
     try {
         const { userId } = req.params;
-        const posts = await Post.find({ userId });
-        res.status(201).json({ posts });
+        const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+        res.status(201).json({  result: true, posts });
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -105,7 +106,7 @@ export const likePost = async (req, res) => {
             { new: true }
         );
         await user.save();
-        res.status(200).json(updatedPost);
+        res.status(200).json({result: true, post: updatedPost});
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -135,6 +136,7 @@ export const deleteComment = async (req, res) => {
     try {
         const { id } = req.params;
         const { deletedComment } = req.body;
+        console.log(deletedComment);
         
         const post = await Post.findById(id);
         if (!post) {

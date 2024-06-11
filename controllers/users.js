@@ -6,7 +6,7 @@ export const getUser = async (req, res) => {
         const { id } = req.params;
         const user = await User.findById(id);
         if (!user) res.status(400).json("User Not Found");
-        res.status(200).json(user);
+        res.status(200).json({ result: true, data:user });
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -27,9 +27,27 @@ export const getUserFriends = async (req, res) => {
                 return { _id, firstName, middleName, lastName, occupation, location, picturePath };
             }
         )
-        res.status(200).json({ formattedFriends });
+        res.status(200).json({ result: true, friends:formattedFriends });
     } catch (error) {
         res.status(404).json({ error: error.message });
+    }
+}
+
+/* SEARCH */
+export const searchUser = async (req, res) => {
+    try {
+        const key = req.query.search ? {
+            $or: [
+                { firstName: { $regex: req.query.search, $options: "i" } },
+                { middleName: { $regex: req.query.search, $options: "i" } },
+                { lastName: { $regex: req.query.search, $options: "i" } },
+            ]
+        } : {};
+        const users = await User.find(key).find({ _id: { $ne: req.user.id } });
+        res.status(200).json({ result: true, data: users });
+        
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
 }
 
@@ -55,12 +73,18 @@ export const addRemoveFriends = async (req, res) => {
             user.friends.map((id) => User.findById(id))
         );
 
-        const formattedFriends = friends.map(
-            ({ _id, firstName, middleName, lastName, occupation, location, picturePath }) => {
-                return { _id, firstName, middleName, lastName, occupation, location, picturePath };
-            }
-        )
-        res.status(200).json(formattedFriends);
+        const formattedFriends = friends.map(({ _id, firstName, middleName, lastName, occupation, location, picturePath }) => ({
+            _id,
+            firstName,
+            middleName,
+            lastName,
+            occupation,
+            location,
+            picturePath
+        }));
+        
+        res.status(200).json({ result: true, friends: formattedFriends });
+        
     } catch (error) {
         res.status(404).json({ error: error.message });
     }

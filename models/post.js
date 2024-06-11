@@ -20,6 +20,10 @@ const postSchema = mongoose.Schema({
     description: String,
     picturePath: String,
     userPicturePath: String,
+    mediaType: {
+        type: String,
+        default: 'image'
+    },
     likes: {
         type: Map,
         default: {},
