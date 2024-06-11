@@ -17,10 +17,10 @@ export const register = async (req, res) => {
             occupation,
         } = req.body;
 
-        if( !firstName || !lastName || !email || !password ) return res.status(400).json({ message: 'Please provide all mandatory fields' });
+        if( !firstName || !lastName || !email || !password ) return res.status(400).json({ result: false ,message: 'Please provide all mandatory fields' });
 
         const isExist = await User.findOne({email})
-        if(isExist) return res.status(400).json({ message: "User Already Exist With This Credentials" })
+        if(isExist) return res.status(400).json({ result: false ,message: "User Already Exist With This Credentials" })
     
         const salt = await bcrypt.genSalt();
         const hashPassword = await bcrypt.hash(password, salt);
@@ -31,14 +31,14 @@ export const register = async (req, res) => {
             lastName,
             email,
             password: hashPassword,
-            picturePath,
+            picturePath: picturePath || process.env.USER_DEFAULT_IMG,
             friends,
             location,
             occupation,
             totalPosts: 0,
         });
         const savedUser = await newUser.save();
-        res.status(201).json(savedUser);
+        res.status(201).json({result: true, savedUser});
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -49,13 +49,13 @@ export const login = async(req, res) =>{
     try {
         const {email, password} = req.body;
 
-        if( !email || !password ) return res.status(400).json({ message: 'Please provide an email and a password'});
+        if( !email || !password ) return res.status(400).json({ result: false ,message: 'Please provide an email and a password'});
 
         const user = await User.findOne({email});
-        if (!user) return res.status(400).json(({ message: "User not found" }));
+        if (!user) return res.status(400).json(({ result: false ,message: "User not found" }));
     
         const isPassMatch = await bcrypt.compare(password, user.password);
-        if(!isPassMatch) res.status(400).json({ message: "Invalid Credentials" });
+        if(!isPassMatch) res.status(400).json({ result: false ,message: "Invalid Credentials" });
     
         const token = jwt.sign( {id: user._id}, process.env.JWT_SECRET );
         delete user.password;
