@@ -72,32 +72,6 @@ export const createGroup = async (req, res) => {
     }
 }
 
-export const updateGroup = async (req, res) => {
-    if (!req.body.users || !req.body.name) {
-        return res.status(400).send({ message: "Please Fill all mandatory feilds" });
-    }
-
-    var users = JSON.parse(req.body.users);
-    users.push(req.user.id);
-    try {
-        const groupChat = await Chat.findByIdAndUpdate(req.body.chatId, {
-            chatName: req.body.name,
-            users: users,
-            isGroupChat: true,
-            groupAdmin: req.user.id,
-            groupPicture: req.body.groupPicture
-        });
-
-        const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
-            .populate("users", "-password")
-            .populate("groupAdmin", "-password");
-
-        res.status(200).json({ result: true, data: fullGroupChat });
-    } catch (error) {
-        res.status(404).json({ error: error.message });
-    }
-}
-
 export const addToGroup = async (req, res) => {
     try {
         const { chatId, userId } = req.body;
@@ -175,6 +149,32 @@ export const renameGroup = async (req, res) => {
         } else {
             res.status(201).json({ result: true, data: updatedChat });
         }
+    } catch (error) {
+        res.status(404).json({ error: error.message });
+    }
+}
+
+export const updateGroup = async (req, res) => {
+    if (!req.body.users || !req.body.name || !req.body.admin) {
+        return res.status(400).send({ message: "Please Fill all mandatory feilds" });
+    }
+
+    var users = JSON.parse(req.body.users);
+    users.push(req.user.id);
+    try {
+        const groupChat = await Chat.findByIdAndUpdate(req.body.chatId, {
+            chatName: req.body.name,
+            users: users,
+            isGroupChat: true,
+            groupAdmin: req.body.admin,
+            groupPicture: req.body.groupPicture
+        });
+
+        const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
+            .populate("users", "-password")
+            .populate("groupAdmin", "-password");
+
+        res.status(200).json({ result: true, data: fullGroupChat });
     } catch (error) {
         res.status(404).json({ error: error.message });
     }

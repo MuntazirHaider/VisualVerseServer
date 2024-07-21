@@ -10,7 +10,6 @@ import {
     updateGroup
 } from "../controllers/chats.js";
 import { verifyToken } from "../middleware/auth.js";
-import { searchUser } from "../controllers/users.js";
 
 const router = express.Router();
 

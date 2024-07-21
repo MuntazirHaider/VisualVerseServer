@@ -93,7 +93,6 @@ export const addRemoveFriends = async (req, res) => {
 export const updateProfile = async (req, res) => {
     try {
         const { userId, ...rest} = req.body;
-        console.log("USER ID", req.body);
         let user = await User.findById(userId);
         if (!user) res.status(400).json("User Not Found");
         await User.updateOne({ _id: userId }, rest);
