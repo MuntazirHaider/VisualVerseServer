@@ -34,23 +34,23 @@ export const createPost = async (req, res) => {
 export const createComment = async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         const post = await Post.findById(id);
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        post.comments.push({ 
+        post.comments.push({
             "userId": req.body.userId,
             "name": req.body.name,
             "picturePath": req.body.picturePath,
             "comment": req.body.comment
-         })
+        })
 
-         const updatedCommnets = post.comments;
-         
+        const updatedCommnets = post.comments;
+
         await post.save();
-        res.status(200).json({result: true, updatedCommnets});
+        res.status(200).json({ result: true, updatedCommnets });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -70,7 +70,7 @@ export const getUserPosts = async (req, res) => {
     try {
         const { userId } = req.params;
         const posts = await Post.find({ userId }).sort({ createdAt: -1 });
-        res.status(201).json({  result: true, posts });
+        res.status(201).json({ result: true, posts });
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -83,7 +83,7 @@ export const likePost = async (req, res) => {
         const { userId } = req.body;
         const { id } = req.params;
 
-        
+
         const post = await Post.findById(id);
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });
@@ -106,11 +106,39 @@ export const likePost = async (req, res) => {
             { new: true }
         );
         await user.save();
-        res.status(200).json({result: true, post: updatedPost});
+        res.status(200).json({ result: true, post: updatedPost });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const editComment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId, comment, editedComment } = req.body;
+
+        const post = await Post.findById(id);
+        if (!post) return res.status(404).json({ error: 'Post not found' });
+
+        const commentToEdit = post.comments.find(
+            (c) => c.userId.toString() === userId && c.comment === comment
+        );
+        if (!commentToEdit) return res.status(404).json({ error: 'Comment not found' });
+
+        commentToEdit.comment = editedComment;
+
+        const updatedPost = await Post.findByIdAndUpdate(
+            id,
+            { comments: post.comments },
+            { new: true }
+        );
+
+        res.status(200).json({ result: true, response: updatedPost });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
 
 /* Delete */
 
@@ -123,7 +151,14 @@ export const deletePost = async (req, res) => {
             return res.status(404).json({ error: 'Post not found' });
         }
 
+        const { userId } = post;
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(400).json({ message: 'User Not Found' });
+        user.totalPosts--;
+
         await Post.findByIdAndDelete(id);
+        await user.save();
 
         res.status(200).json({ result: true, message: 'Post deleted successfully' });
     } catch (error) {
@@ -136,8 +171,7 @@ export const deleteComment = async (req, res) => {
     try {
         const { id } = req.params;
         const { deletedComment } = req.body;
-        console.log(deletedComment);
-        
+
         const post = await Post.findById(id);
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });

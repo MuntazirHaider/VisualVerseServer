@@ -1,9 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { Server } from "socket.io";
 import express from "express";
 import { createServer } from 'node:http';
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
@@ -12,9 +13,11 @@ import postRoutes from "./routes/posts.js";
 import chatRoutes from "./routes/chats.js";
 import messageRoutes from "./routes/messages.js";
 import notificationRoutes from "./routes/notifications.js"
+import feedbackRoutes from "./routes/feedback.js"
 import { ChatsSocketHandler } from "./sockets/ChatSockets.js";
+import { VideoSocketHandler } from "./sockets/VideoSocket.js";
+import { getUserDetailsFromToken } from "./services/tokenService.js";
 
-dotenv.config();
 const app = express();
 const server = createServer(app);
 app.use(express.json()); // Use Express's built-in body parser
@@ -30,6 +33,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 const PORT = process.env.PORT || 6001;
 const CLIENT_PORT = process.env.CLIENT_PORT || 3002;
@@ -48,9 +52,21 @@ const io = new Server(server, {
   }
 });
 
-const onConnection = (socket) => {
-  console.log("connect user", socket.id);
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (token) {
+    const user = await getUserDetailsFromToken(token);
+    socket.userId = user._id
+    next();
+  } else {
+    next(new Error('Authentication error'));
+  }
+});
+
+const onConnection = async (socket) => {
   ChatsSocketHandler(io, socket);
+  VideoSocketHandler(io, socket);
 }
 
 io.on("connection", onConnection);

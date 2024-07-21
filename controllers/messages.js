@@ -20,32 +20,36 @@ export const sendMessage = async (req, res) => {
     const { content, chatId } = req.body;
 
     if (!content || !chatId) {
-        res.status(400).send(({ result: false, message: "Dont have mandatory fields" }));
+        return res.status(400).send({ result: false, message: "Don't have mandatory fields" });
     }
 
     const newMessage = {
         sender: req.user.id,
         content: content,
-        chat: chatId
-    }
+        chat: chatId,
+        contentType: req.body?.contentType ? req.body.contentType : "text"
+    };
 
     try {
-        var message = await Message.create(newMessage);
+        let message = await Message.create(newMessage);
 
-        message = await Message.populate(message, [
-            { path: "sender", select: "firstName middleName lastName picturePath email" },
-            { path: "chat" }
-        ]);
-        message = await User.populate(message, {
-            path: "chat.users",
-            select: "firstName middleName lastName picturePath email"
-        })
+        if (newMessage.contentType !== 'info') {
+            message = await Message.populate(message, [
+                { path: "sender", select: "firstName middleName lastName picturePath email" },
+                { path: "chat" }
+            ]);
+            message = await User.populate(message, {
+                path: "chat.users",
+                select: "firstName middleName lastName picturePath email"
+            });
 
-        await Chat.findByIdAndUpdate(req.body.chatId, {
-            latestMessage: message
-        })
-        res.status(200).json({ result: true, data: message });
+            await Chat.findByIdAndUpdate(req.body.chatId, {
+                latestMessage: message
+            });
+        }
+
+        return res.status(200).json({ result: true, data: message });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
     }
-}
+};
