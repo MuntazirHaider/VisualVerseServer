@@ -65,6 +65,7 @@ io.use(async (socket, next) => {
 });
 
 const onConnection = async (socket) => {
+  console.log('Sockets  are initialized 🔌');
   ChatsSocketHandler(io, socket);
   VideoSocketHandler(io, socket);
 }
