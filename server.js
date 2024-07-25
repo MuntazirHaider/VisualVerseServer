@@ -48,7 +48,7 @@ mongoose.connect(process.env.MONGO_URI)
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
-    origin: `http://localhost:${CLIENT_PORT}`,
+    origin: process.env.REACT_APP_CLIENT_URL,
   }
 });
 
