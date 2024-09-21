@@ -36,7 +36,6 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
 const PORT = process.env.PORT || 6001;
-const CLIENT_PORT = process.env.CLIENT_PORT || 3002;
 
 /* MONGOOSE SETUP */
 mongoose.connect(process.env.MONGO_URI)
@@ -47,8 +46,8 @@ mongoose.connect(process.env.MONGO_URI)
 /* WEB SOCKET SETUP */
 const io = new Server(server, {
   pingTimeout: 60000,
-  cors: {
-    origin: `http://localhost:${CLIENT_PORT}`,
+  cors: { 
+    origin: `${process.env.REACT_APP_CLIENT_URL}`,
   }
 });
 
@@ -65,6 +64,7 @@ io.use(async (socket, next) => {
 });
 
 const onConnection = async (socket) => {
+  console.log('Sockets  are initialized 🔌');
   ChatsSocketHandler(io, socket);
   VideoSocketHandler(io, socket);
 }

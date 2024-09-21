@@ -21,8 +21,13 @@ export const fetchAllNotifications = async (req, res) => {
             { path: 'notificationMessage' },
         ]);
 
+        // Filter notifications where the sender is not the current user
+        let finalNotifications = userNotifications.filter(notification => {
+            return notification.notificationMessage.sender.toString() !== userId;
+        });
+
         // Conditionally populate users field in notificationChat for non-group chats
-        for (let notification of userNotifications) {
+        for (let notification of finalNotifications) {
             if (!notification.notificationChat.isGroupChat) {
                 notification = await User.populate(notification, {
                     path: 'notificationChat.users',
@@ -31,7 +36,7 @@ export const fetchAllNotifications = async (req, res) => {
             }
         }
 
-        res.status(200).json({ result: true, data: userNotifications });
+        res.status(200).json({ result: true, data: finalNotifications });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

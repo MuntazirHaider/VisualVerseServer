@@ -4,7 +4,6 @@ const onlineUsers = new Set();
 export const ChatsSocketHandler = async (io, socket) => {
 
   socket.on('user: connected', (userId) => {
-
     // Check if the user is not in the online users set
     if (!onlineUsers.has(userId)) {
       // Add the new user to the online users set and join their room
@@ -72,6 +71,14 @@ export const ChatsSocketHandler = async (io, socket) => {
   socket.on("chats: stop typing", (roomId) => {
     socket.to(roomId).emit("chats: stop typing");
   });
+
+  socket.on("friend request: send requested", (request) => {
+    socket.to(request.recipient._id).emit("friend request: received requested", request);
+  });
+
+  socket.on('friend request: requested accepted', ({ to, recipient }) => {
+    socket.to(to).emit("friend request: request accepted", recipient);
+  })
 
   socket.on('user: disconnect', () => {
     onlineUsers.delete(socket.userId.toString());

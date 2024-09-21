@@ -103,6 +103,46 @@ export const forgetPassword = async (req, res) => {
     }
 };
 
+export const register_newMail = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ result: false, message: "Email field is mandatory" });
+        }
+
+        const otp = generateOtp();
+
+        // Check if OTP generation was successful
+        if (!otp) {
+            return res.status(500).json({ result: false, message: "Failed to generate OTP. Please try again later." });
+        }
+
+        const isSend = await sendMail(email, otp);
+
+        if (isSend) {
+            // Remove any existing OTP for the email
+            await OTP.findOneAndDelete({ email });
+
+            // Create a new OTP record
+            const otpInstance = new OTP({
+                email,
+                otp,
+                createdAt: Date.now()
+            });
+            await otpInstance.save();
+
+            return res.status(200).json({ result: true, message: "OTP sent to your email" });
+        } else {
+            return res.status(500).json({ result: false, message: "Failed to send OTP. Please try again later." });
+        }
+    } catch (error) {
+        console.error("Error in register_newMail:", error);
+        res.status(500).json({ result: false, message: error.message });
+    }
+};
+
+
 /* Verify OTP */
 export const verifyOtp = async (req, res) => {
     try {
@@ -116,10 +156,32 @@ export const verifyOtp = async (req, res) => {
 
         const verified = await OTP.findOne({ user: user._id });
 
-        if (verified) {
+        if (verified.otp.toString() === otp) {
             res.status(200).json({ result: true, message: "User is verified" });
+        } else if (verified.otp.toString() !== otp) {
+            res.status(404).json({ result: false, message: "Invalid OTP" });
         } else {
-            res.status(404).json({ result: false, message: "This OTP is expired" });
+            res.status(404).json({ result: false, message: "Expired OTP, Please try again" });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+export const register_verify_otp = async (req, res) => {
+    try {
+        const { otp, email } = req.body;
+
+        if (!otp || otp.length < 6) return res.status(400).json({ result: false, message: "Invalid OTP" });
+
+        const verified = await OTP.findOne({ email });
+
+        if (verified.otp.toString() === otp) {
+            res.status(200).json({ result: true, message: "User is verified" });
+        } else if (verified.otp.toString() !== otp) {
+            res.status(404).json({ result: false, message: "Invalid OTP" });
+        } else {
+            res.status(404).json({ result: false, message: "Expired OTP, Please try again" });
         }
     } catch (error) {
         return res.status(500).json({ error: error.message });
