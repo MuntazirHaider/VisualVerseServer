@@ -46,7 +46,7 @@ mongoose.connect(process.env.MONGO_URI)
 /* WEB SOCKET SETUP */
 const io = new Server(server, {
   pingTimeout: 60000,
-  cors: { 
+  cors: {
     origin: `${process.env.REACT_APP_CLIENT_URL}`,
   }
 });
