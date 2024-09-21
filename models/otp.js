@@ -4,12 +4,15 @@ const OtpSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true
     },
     otp: {
         type: Number,
         default: 0,
         required: true
+    },
+    email: {
+        type: String,
+        default: ''
     },
     createdAt: {
         type: Date,

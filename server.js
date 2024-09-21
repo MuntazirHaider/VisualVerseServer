@@ -36,7 +36,6 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
 const PORT = process.env.PORT || 6001;
-const CLIENT_PORT = process.env.CLIENT_PORT || 3002;
 
 /* MONGOOSE SETUP */
 mongoose.connect(process.env.MONGO_URI)
@@ -48,7 +47,7 @@ mongoose.connect(process.env.MONGO_URI)
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
-    origin: process.env.REACT_APP_CLIENT_URL,
+    origin: `${process.env.REACT_APP_CLIENT_URL}`,
   }
 });
 
